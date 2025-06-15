@@ -117,12 +117,6 @@ void handleAdjust() {
 
   unsigned long now = millis();
 
-  // 👉 Обробка About
-  if (currentMenu == 7) {
-    state = ABOUT;
-    return;
-  }
-
   if (selectPressed) {
     state = MENU;
     drawMainMenu();
@@ -137,34 +131,44 @@ void handleAdjust() {
           settings.brightness += 16;
           if (settings.brightness > 255) settings.brightness = 16;
           FastLED.setBrightness(settings.brightness);
+          EEPROM.update(EEPROM_BRIGHTNESS, settings.brightness);
           break;
+          
         case 1:  // Red
           settings.currentColor.r = (settings.currentColor.r + 5) % 256;
+          EEPROM.update(EEPROM_RED, settings.currentColor.r);
           break;
+          
         case 2:  // Green
           settings.currentColor.g = (settings.currentColor.g + 5) % 256;
+          EEPROM.update(EEPROM_GREEN, settings.currentColor.g);
           break;
+          
         case 3:  // Blue
           settings.currentColor.b = (settings.currentColor.b + 5) % 256;
+          EEPROM.update(EEPROM_BLUE, settings.currentColor.b);
           break;
+          
         case 4:  // Effect
           settings.effectIndex = (settings.effectIndex + 1) % EFFECT_COUNT;
+          EEPROM.update(EEPROM_EFFECT, settings.effectIndex);
           break;
-        case 5:  // Rotate Display
-          settings.rotateDisplay180 = !settings.rotateDisplay180;
-          display.setRotation(settings.rotateDisplay180 ? 2 : 0);
+          
+        case 5:
+          invertDisplay = !invertDisplay;
+          display.setRotation(invertDisplay ? 2 : 0);
           break;
-        case 6:  // Invert Display
-          settings.invertDisplay = !settings.invertDisplay;
-          display.invertDisplay(settings.invertDisplay);
+          
+        case 6:
+          invertDisplay = !invertDisplay;
+          display.invertDisplay(invertDisplay);
           break;
-        case 8:  // About - тут нічого не робимо, бо це просто інформаційний екран
+          
+        case 7:  // About - нічого не робимо
           break;
       }
 
-      saveSettings(settings);
       drawAdjustMenu();
-
       lastAdjustTime = now;
       wasPressed = true;
 
@@ -178,11 +182,9 @@ void handleAdjust() {
 
 void handleAbout() {
   if (!digitalRead(SELECT_PIN)) {
-    scrollPosY = SCREEN_HEIGHT;
     state = MENU;
     drawMainMenu();
-    delay(200);
   } else {
-    drawAbout();
+    drawAbout(); // Цей виклик має відбуватися постійно
   }
 }

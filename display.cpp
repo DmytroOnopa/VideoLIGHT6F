@@ -13,13 +13,8 @@ extern const char* mainMenu[];  // масив рядків
 extern bool invertDisplay;
 
 const String aboutText = 
-  "VideoLIGHT OS v6.1F\n"
-  "Development by\n"
-  "theGrove\n"
-  "geniusbar.site/\n"
-  "Current FW repo:\n"
-  "github.com/DmytroOnopa\n"
-  "/VideoLIGHT-OS";
+  "Git: DmytroOnopa\n"
+  "FW: VideoLIGHT6F";
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -144,7 +139,7 @@ void drawAdjustMenu() {
       break;
     case 5: // Rotate
       display.print(F("Rotate display: "));
-      display.println(invertDisplay ? "Yes" : "No");
+      display.println(invertDisplay ? "0" : "180");
       break;
     case 6: // Invert
       display.print(F("Enable light mode: "));
@@ -182,47 +177,37 @@ void drawAbout() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  int lineHeight = 8;
-
-  int y = scrollPosY;
-
-  int start = 0;
-  int end = aboutText.indexOf('\n', start);
-  while (end != -1) {
-    String line = aboutText.substring(start, end);
-    if (y >= -lineHeight && y <= SCREEN_HEIGHT) {
-     display.setCursor(0, y);
-      display.print(line);
-    }
+  const int lineHeight = 10;  // Висота рядка
+  const int startY = 2;       // Відступ зверху
+  int y = startY;
+  
+  // Розбиваємо текст на рядки
+  int startPos = 0;
+  int endPos = aboutText.indexOf('\n');
+  
+  while (endPos != -1 && y < SCREEN_HEIGHT - 10) {  // -10 для підказки внизу
+    String line = aboutText.substring(startPos, endPos);
+    display.setCursor(0, y);
+    display.print(line);
+    
     y += lineHeight;
-    start = end + 1;
-    end = aboutText.indexOf('\n', start);
-  }
-// останній рядок
-  String lastLine = aboutText.substring(start);
-  if (y >= 0 && (y + lineHeight) <= SCREEN_HEIGHT - 10) {
-   display.setCursor(0, y);
-   display.print(lastLine);
+    startPos = endPos + 1;
+    endPos = aboutText.indexOf('\n', startPos);
   }
 
-  // підказка внизу
-  display.setTextColor(SSD1306_WHITE);
-  display.drawLine(0, 52, SCREEN_WIDTH, 52, SSD1306_WHITE);
+  // Останній рядок (якщо є)
+  if (y < SCREEN_HEIGHT - 10) {
+    String lastLine = aboutText.substring(startPos);
+    display.setCursor(0, y);
+    display.print(lastLine);
+  }
+
+  // Підказка внизу
+  display.drawLine(0, SCREEN_HEIGHT - 10, SCREEN_WIDTH, SCREEN_HEIGHT - 10, SSD1306_WHITE);
   display.setCursor(0, SCREEN_HEIGHT - 8);
-  display.println(F("Press SELECT to back"));
+  display.print(F("Press SELECT to back"));
 
   display.display();
-
-  if (millis() - lastScrollTime > scrollInterval) {
-    scrollPosY -= scrollSpeed;
-
-    int totalHeight = countLines(aboutText) * lineHeight;
-
-    if (scrollPosY < -totalHeight) {
-      scrollPosY = SCREEN_HEIGHT;
-    }
-    lastScrollTime = millis();
-  }
 }
 
 void screensaverUpdate() {
