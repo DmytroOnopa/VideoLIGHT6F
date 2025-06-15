@@ -84,19 +84,35 @@ void effectStaboscope() {
 }
 
 void effectSOS() {
-  static unsigned long t = 0;
-  static int s = 0;
-  static bool on = false;
-  const int seq[] = {200,200,200,200,200,200,600,600,600,600,600,600,200,200,200};
-  if (millis() - t < (on ? seq[s] : 200)) return;
-  t = millis();
-  on = !on;
-  if (on) fill_solid(leds, LED_COUNT, CRGB(255,80,0));
-  else {
-    fill_solid(leds, LED_COUNT, CRGB::Black);
-    s = (s + 1) % 15;
-  }
-  FastLED.show();
+    static unsigned long t = 0;
+    static int s = 0;
+    static bool on = false;
+    
+    const int seq[] = {
+        200, 200,   // S (·)  
+        200, 200,   // S (·)  
+        200, 600,   // S (·) + пауза перед O  
+        600, 200,   // O (-)  
+        600, 200,   // O (-)  
+        600, 600,   // O (-) + пауза перед S  
+        200, 200,   // S (·)  
+        200, 200,   // S (·)  
+        200, 600    // S (·) + завершення циклу  
+    };
+    
+    if (millis() - t < seq[s]) return;  // Чекаємо, поки не минув час
+    
+    t = millis();
+    on = !on;  // Змінюємо стан (увімкнено/вимкнено)
+    
+    if (on) {
+        fill_solid(leds, LED_COUNT, CRGB(255, 80, 0));  // Увімкнути (помаранчевий)
+    } else {
+        fill_solid(leds, LED_COUNT, CRGB::Black);  // Вимкнути
+        s = (s + 1) % 16;  // Перехід до наступної фази (16 елементів)
+    }
+    
+    FastLED.show();  // Оновити світлодіоди
 }
 
 void effectHazard() {

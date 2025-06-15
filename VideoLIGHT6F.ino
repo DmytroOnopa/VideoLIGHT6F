@@ -16,9 +16,10 @@ const char* mainMenu[MENU_COUNT] = {
   "Green",
   "Blue",
   "Effect",
-  "Invert",
-  "About",
-  "Game"
+  "Rotate Display",
+  "Invert Display", 
+  "Game",
+  "About"          // About тепер останній
 };
 
 State state = MENU;
@@ -89,22 +90,18 @@ void handleMenu() {
     delay(200);
   }
 
-  if (!digitalRead(SELECT_PIN)) {
-    if (currentMenu >= 0 && currentMenu <= 6) {
+if (!digitalRead(SELECT_PIN)) {
+    if (currentMenu >= 0 && currentMenu <= 6) {  // Налаштування
       state = ADJUST;
       drawAdjustMenu();
     }
-    else {
-      switch (currentMenu) {
-        case 7:  // Game
-          state = SPACEINVADERS;
-          spaceInvadersInit();
-          break;
-        case 8:  // About
-          state = ABOUT;
-          drawAbout();
-          break;
-      }
+    else if (currentMenu == 7) {  // Game
+      state = SPACEINVADERS;
+      spaceInvadersInit();
+    }
+    else if (currentMenu == 8) {  // About
+      state = ABOUT;
+      drawAbout();
     }
     delay(200);
   }
@@ -160,6 +157,8 @@ void handleAdjust() {
         case 6:  // Invert Display
           settings.invertDisplay = !settings.invertDisplay;
           display.invertDisplay(settings.invertDisplay);
+          break;
+        case 8:  // About - тут нічого не робимо, бо це просто інформаційний екран
           break;
       }
 
