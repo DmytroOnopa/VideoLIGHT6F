@@ -190,7 +190,7 @@ void drawAbout() {
   int end = aboutText.indexOf('\n', start);
   while (end != -1) {
     String line = aboutText.substring(start, end);
-    if (y >= 0 && (y + lineHeight) <= SCREEN_HEIGHT - 10) {
+    if (y >= -lineHeight && y <= SCREEN_HEIGHT) {
      display.setCursor(0, y);
       display.print(line);
     }

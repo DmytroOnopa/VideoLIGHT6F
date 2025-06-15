@@ -28,7 +28,7 @@ int scrollSpeed = SCROLL_SPEED;
 Settings settings;
 
 // Для about screen
-int scrollPosY = SCREEN_HEIGHT;  // Починаємо знизу
+int scrollPosY = 10;  // Починаємо знизу
 unsigned long lastScrollTime = 0;
 
 void setup() {
@@ -142,13 +142,13 @@ void handleAdjust() {
           FastLED.setBrightness(settings.brightness);
           break;
         case 1:  // Red
-          settings.currentColor.r = (settings.currentColor.r + 1) % 256;
+          settings.currentColor.r = (settings.currentColor.r + 5) % 256;
           break;
         case 2:  // Green
-          settings.currentColor.g = (settings.currentColor.g + 1) % 256;
+          settings.currentColor.g = (settings.currentColor.g + 5) % 256;
           break;
         case 3:  // Blue
-          settings.currentColor.b = (settings.currentColor.b + 1) % 256;
+          settings.currentColor.b = (settings.currentColor.b + 5) % 256;
           break;
         case 4:  // Effect
           settings.effectIndex = (settings.effectIndex + 1) % EFFECT_COUNT;

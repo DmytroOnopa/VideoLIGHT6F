@@ -25,7 +25,7 @@
 
 // Інші константи
 #define EFFECT_COUNT 7
-#define MENU_COUNT 9
+#define MENU_COUNT 8
 #define VISIBLE_MENU_ITEMS 4
 #define SCREENSAVER_TIMEOUT 30000
 
