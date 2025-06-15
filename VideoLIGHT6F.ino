@@ -63,12 +63,31 @@ void loop() {
   }
 
   switch (state) {
-    case MENU: handleMenu(); break;
-    case ADJUST: handleAdjust(); break;
-    case ABOUT: handleAbout(); break;
-    case SPACEINVADERS: spaceInvadersUpdate(); break;
-    case SPACEINVADERS_GAMEOVER: spaceInvadersGameOverUpdate(); break;
-    case SCREENSAVER: screensaverUpdate(); break;
+    case MENU:
+      handleMenu();
+      break;
+
+    case ADJUST:
+      handleAdjust();
+      break;
+
+    case ABOUT:
+      handleAbout();
+      break;
+
+    case SPACEINVADERS:
+      spaceInvadersUpdate();
+      spaceInvadersDraw(); // ← ДОДАНО! Малює гру
+      break;
+
+    case SPACEINVADERS_GAMEOVER:
+      spaceInvadersGameOverUpdate();
+      // spaceInvadersDraw(); // ← ДОДАНО! Показує GAME OVER
+      break;
+
+    case SCREENSAVER:
+      screensaverUpdate();
+      break;
   }
 
   updateLEDs(settings.effectIndex, settings.currentColor);

@@ -1,206 +1,202 @@
-#include "config.h"
-#include "display.h"
-#include "leds.h"
 #include "game.h"
-#include "settings.h"
 #include "state.h"
-#include <Arduino.h>
+#include "display.h"  // Додано для доступу до дисплея
+#include "settings.h" // Додано для доступу до Settings
 
-// Оголошення зовнішніх змінних
+extern Adafruit_SSD1306 display;
 extern State state;
-extern Settings settings;
-extern int currentMenu;
-extern int menuTopIndex;
+extern Settings settings;  // Тепер правильно
 
-// Ігрові змінні
-int playerX = SCREEN_WIDTH / 2 - PLAYER_WIDTH / 2;
-int playerY = SCREEN_HEIGHT - PLAYER_HEIGHT - 2;
-int lives = 3;
-Bullet bullet;
-bool invaders[INVADER_ROWS][INVADER_COLS];
-int invaderX = 0;
-int invaderY = 10;
-int invaderDir = 1;
-int invaderStepDowns = 0;
+// Глобальні змінні гри
+int playerLane = 1;
+Car cars[MAX_CARS];
+int roadOffset = 0;
+unsigned long lastCarSpawn = 0;
 bool gameOver = false;
-int gameOverMenuIndex = 0;
-unsigned long lastShotTime = 0;
-unsigned long lastMoveTime = 0;
+
+int score = 0;
+int gameOverSelection = 0;
 
 void spaceInvadersInit() {
-    playerX = SCREEN_WIDTH / 2 - PLAYER_WIDTH / 2;
-    playerY = SCREEN_HEIGHT - PLAYER_HEIGHT - 2;
-    lives = 3;
-    bullet.active = false;
-    invaderX = 0;
-    invaderY = 10;
-    invaderDir = 1;
-    invaderStepDowns = 0;
-    gameOver = false;
-    lastShotTime = 0;
-    lastMoveTime = 0;
-
-    for (int row = 0; row < INVADER_ROWS; row++) {
-        for (int col = 0; col < INVADER_COLS; col++) {
-            invaders[row][col] = true;
-        }
-    }
+  playerLane = 1;
+  gameOver = false;
+  
+  // Очищення машин
+  for (int i = 0; i < MAX_CARS; i++) {
+    cars[i].active = false;
+  }
+  
+  lastCarSpawn = millis();
+  
+  // Ініціалізація генератора випадкових чисел
+  randomSeed(analogRead(0));
 }
 
 void spaceInvadersUpdate() {
-  // Керування гравцем
-  if (!digitalRead(SELECT_PIN)) {
-    playerX = constrain(playerX - 2, 0, SCREEN_WIDTH - PLAYER_WIDTH);
-  }
-  if (!digitalRead(NEXT_PIN)) {
-    playerX = constrain(playerX + 2, 0, SCREEN_WIDTH - PLAYER_WIDTH);
-  }
+  if (gameOver) return;
 
-  // Автоматична стрільба
-  if (!bullet.active && millis() - lastShotTime > SHOT_INTERVAL) {
-    bullet.x = playerX + PLAYER_WIDTH / 2;
-    bullet.y = playerY - 1;
-    bullet.active = true;
-    lastShotTime = millis();
-  }
+  // Обробка керування з захистом від заїдання
+  static unsigned long lastInputTime = 0;
+  unsigned long currentMillis = millis();
 
-  // Рух кулі
-  if (bullet.active) {
-    bullet.y -= 3;
-    if (bullet.y < 0) bullet.active = false;
+  if (currentMillis - lastInputTime > 100) {
+    if (!digitalRead(NEXT_PIN) && playerLane > 0) {
+      playerLane--;
+      lastInputTime = currentMillis;
+    }
+    else if (!digitalRead(SELECT_PIN) && playerLane < ROAD_LANES - 1) {
+      playerLane++;
+      lastInputTime = currentMillis;
+    }
   }
 
-  // Рух ворогів
-  if (millis() - lastMoveTime > INVADER_MOVE_INTERVAL) {
-    lastMoveTime = millis();
-    invaderX += invaderDir * 5;
+  // Рух дороги
+  roadOffset = (roadOffset + 2) % 8;
 
-    // Перевірка досягнення краю екрану
-    if (invaderX + INVADER_COLS * 12 > SCREEN_WIDTH || invaderX < 0) {
-      invaderDir *= -1;
-      invaderY += 6;
-      invaderStepDowns++;
+  // Генерація нових машин
+  if (currentMillis - lastCarSpawn > CAR_SPAWN_DELAY) {
+    for (int i = 0; i < MAX_CARS; i++) {
+      if (!cars[i].active) {
+        cars[i].lane = random(0, ROAD_LANES);
+        int laneWidth = display.width() / ROAD_LANES;
+        cars[i].x = (laneWidth * cars[i].lane) + (laneWidth / 2) - (CAR_WIDTH / 2);
+        cars[i].y = -CAR_HEIGHT;
+        cars[i].active = true;
+        lastCarSpawn = currentMillis;
+        break;
+      }
+    }
+  }
 
-      if (invaderStepDowns >= 3) {
-        lives = 0;
+  // Оновлення позицій машин
+  for (int i = 0; i < MAX_CARS; i++) {
+    if (cars[i].active) {
+      cars[i].y += 3;  // Швидкість машин
+
+      // Перевірка на зіткнення
+      if (cars[i].y + CAR_HEIGHT > display.height() - PLAYER_HEIGHT &&
+          cars[i].y < display.height() - PLAYER_HEIGHT + 5 &&
+          cars[i].lane == playerLane) {
         gameOver = true;
+        state = SPACEINVADERS_GAMEOVER;  // ← ОЦЕ ГОЛОВНЕ
+        return;
       }
+
+      // Видалення машин, що виїхали за межі
+      if (cars[i].y > display.height()) {
+        cars[i].active = false;
+        score++; // Додаємо бал за уникнуту машину
+      }
+
     }
   }
+}
 
-  // Перевірка попадання кулі у ворога
-  if (bullet.active) {
-    for (int row = 0; row < INVADER_ROWS; row++) {
-      for (int col = 0; col < INVADER_COLS; col++) {
-        if (invaders[row][col]) {
-          int ix = invaderX + col * 12;
-          int iy = invaderY + row * 8;
-
-          if (bullet.x >= ix && bullet.x <= ix + 8 &&
-              bullet.y >= iy && bullet.y <= iy + 5) {
-            invaders[row][col] = false;
-            bullet.active = false;
-          }
-        }
-      }
-    }
-  }
-
-  // Перевірка зіткнення гравця з ворогом
-  for (int row = 0; row < INVADER_ROWS; row++) {
-    for (int col = 0; col < INVADER_COLS; col++) {
-      if (invaders[row][col]) {
-        int ix = invaderX + col * 12;
-        int iy = invaderY + row * 8;
-        if (iy + 5 >= playerY &&
-            ix + 8 >= playerX &&
-            ix <= playerX + PLAYER_WIDTH) {
-          lives--;
-          invaderStepDowns++;
-          if (lives <= 0) gameOver = true;
-          break;
-        }
-      }
-    }
-  }
-
-  // Перевірка завершення гри
-  if (gameOver) {
-      state = SPACEINVADERS_GAMEOVER;
-      drawGameOver(gameOverMenuIndex);
-      return;
-  }
-
-  // Малювання гри
+void spaceInvadersDraw() {
   display.clearDisplay();
 
-  // Гравець
-  display.fillRect(playerX, playerY, PLAYER_WIDTH, PLAYER_HEIGHT, SSD1306_WHITE);
+  int laneWidth = display.width() / ROAD_LANES;
 
-  // Куля
-  if (bullet.active) {
-    display.drawPixel(bullet.x, bullet.y, SSD1306_WHITE);
-  }
-
-  // Вороги
-  for (int row = 0; row < INVADER_ROWS; row++) {
-    for (int col = 0; col < INVADER_COLS; col++) {
-      if (invaders[row][col]) {
-        int ix = invaderX + col * 12;
-        int iy = invaderY + row * 8;
-        display.drawRect(ix, iy, 8, 5, SSD1306_WHITE);
-      }
+  // Малювання дороги з розміткою
+  for (int i = 1; i < ROAD_LANES; i++) {
+    int x = i * laneWidth;
+    for (int y = roadOffset; y < display.height(); y += 12) {
+      display.drawFastVLine(x, y, 6, SSD1306_WHITE);
     }
   }
 
-  // Життя
+  // Малювання машин
+  for (int i = 0; i < MAX_CARS; i++) {
+    if (cars[i].active) {
+      display.fillRoundRect(cars[i].x, cars[i].y, CAR_WIDTH, CAR_HEIGHT, 2, SSD1306_WHITE);
+    }
+  }
+
+  // Малювання гравця з фарами
+  int playerX = (laneWidth * playerLane) + (laneWidth / 2) - (PLAYER_WIDTH / 2);
+  int playerY = display.height() - PLAYER_HEIGHT;
+  display.fillRect(playerX, playerY, PLAYER_WIDTH, PLAYER_HEIGHT, SSD1306_WHITE);
+  display.fillRect(playerX + 2, playerY - 2, 3, 2, SSD1306_WHITE);  // Ліва фара
+  display.fillRect(playerX + PLAYER_WIDTH - 5, playerY - 2, 3, 2, SSD1306_WHITE);  // Права фара
+
+  // Малювання HUD
   display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print("Lives: ");
-  display.print(lives);
+  display.print("SCORE: ");
+  display.print(score);
+
+  // Game Over меню
+  if (gameOver) {
+    const char* options[2] = { "New Game", "Exit" };
+    for (int i = 0; i < 2; i++) {
+      int boxX = display.width() / 2 - 30;
+      int boxY = display.height() / 2 + i * 12;
+      if (i == gameOverSelection) {
+        display.fillRect(boxX, boxY, 60, 10, SSD1306_WHITE);
+        display.setTextColor(SSD1306_BLACK);
+      } else {
+        display.setTextColor(SSD1306_WHITE);
+      }
+      display.setCursor(boxX + 5, boxY + 1);
+      display.print(options[i]);
+    }
+  }
 
   display.display();
 }
 
-void drawGameOver(int gameOverMenuIndex) {
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(20, 20);
-    display.println("Game Over");
-
-    display.setTextSize(1);
-    const char* options[] = { "New Game", "Exit" };
-    int yPositions[] = { 45, 55 };
-
-    for (int i = 0; i < 2; i++) {
-        if (i == gameOverMenuIndex) {
-            display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-        } else {
-            display.setTextColor(SSD1306_WHITE);
-        }
-        display.setCursor(20, yPositions[i]);
-        display.println(options[i]);
-    }
-
-    display.display();
+bool spaceInvadersIsGameOver() {
+  return gameOver;
 }
 
 void spaceInvadersGameOverUpdate() {
+  static unsigned long lastInputTime = 0;
+  static int selectedOption = 0; // 0 = New Game, 1 = Exit
+  unsigned long now = millis();
+
+  // Перемикання між New Game / Exit
+  if (now - lastInputTime > 200) {
     if (!digitalRead(NEXT_PIN)) {
-        gameOverMenuIndex = (gameOverMenuIndex + 1) % 2;
-        drawGameOver(gameOverMenuIndex);
-        delay(200);
+      selectedOption = 1 - selectedOption; // toggle
+      lastInputTime = now;
     }
-    
+
+    // Вибір опції
     if (!digitalRead(SELECT_PIN)) {
-        if (gameOverMenuIndex == 0) {
-            spaceInvadersInit();
-            state = SPACEINVADERS;
-        } else {
-            state = MENU;
-            drawMainMenu();
-        }
-        delay(200);
+      if (selectedOption == 0) {
+        spaceInvadersInit();
+        state = SPACEINVADERS;
+      } else {
+        state = MENU;
+        drawMainMenu();
+      }
+      lastInputTime = now;
     }
+  }
+
+  // Малювання Game Over з опціями
+  display.clearDisplay();
+
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(display.width() / 2 - 48, 8);
+  display.print("GAME OVER");
+
+  display.setTextSize(1);
+  display.setCursor(display.width() / 2 - 30, 32);
+  if (selectedOption == 0) {
+    display.print("> New Game");
+  } else {
+    display.print("  New Game");
+  }
+
+  display.setCursor(display.width() / 2 - 30, 44);
+  if (selectedOption == 1) {
+    display.print("> Exit");
+  } else {
+    display.print("  Exit");
+  }
+
+  display.display();
 }

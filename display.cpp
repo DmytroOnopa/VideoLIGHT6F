@@ -177,29 +177,19 @@ void drawAbout() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  const int lineHeight = 10;  // Висота рядка
-  const int startY = 2;       // Відступ зверху
-  int y = startY;
-  
-  // Розбиваємо текст на рядки
-  int startPos = 0;
-  int endPos = aboutText.indexOf('\n');
-  
-  while (endPos != -1 && y < SCREEN_HEIGHT - 10) {  // -10 для підказки внизу
-    String line = aboutText.substring(startPos, endPos);
+  const int lineHeight = 10;
+  int y = 2;
+
+  int from = 0;
+  while (y < SCREEN_HEIGHT - 10) {
+    int to = aboutText.indexOf('\n', from);
+    if (to == -1) break;
+
     display.setCursor(0, y);
-    display.print(line);
+    display.print(aboutText.substring(from, to));
     
     y += lineHeight;
-    startPos = endPos + 1;
-    endPos = aboutText.indexOf('\n', startPos);
-  }
-
-  // Останній рядок (якщо є)
-  if (y < SCREEN_HEIGHT - 10) {
-    String lastLine = aboutText.substring(startPos);
-    display.setCursor(0, y);
-    display.print(lastLine);
+    from = to + 1;
   }
 
   // Підказка внизу
@@ -212,42 +202,36 @@ void drawAbout() {
 
 void screensaverUpdate() {
   display.clearDisplay();
-
-  // Заголовок по центру
-  const char* title = "geniusbar.site/";
-  int16_t x1, y1;
-  uint16_t w, h;
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.getTextBounds(title, 0, 0, &x1, &y1, &w, &h);
-  display.setCursor((SCREEN_WIDTH - w) / 2, 2);
-  display.println(title);
 
-  // Лінія під заголовком
+  // Центрований заголовок
+  display.setCursor((SCREEN_WIDTH - 84) / 2, 2); // 84 — ширина тексту приблизно
+  display.print(F("geniusbar.site/"));
+
+  // Лінія + рамка
   display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
-
-  // Обʼєднана рамка для RGB + Brightness
   display.drawRect(0, 20, SCREEN_WIDTH, 38, SSD1306_WHITE);
 
-  // RGB всередині рамки
+  // RGB
   display.setCursor(5, 24);
-  display.print("RGB: ");
+  display.print(F("RGB: "));
   display.print(settings.currentColor.r);
-  display.print(",");
+  display.print(',');
   display.print(settings.currentColor.g);
-  display.print(",");
+  display.print(',');
   display.print(settings.currentColor.b);
 
-  // Brightness текст
+  // Яскравість
   display.setCursor(5, 36);
-  display.print("Brightness: ");
+  display.print(F("Brightness: "));
   display.print(settings.brightness);
-  display.print("/255");
+  display.print(F("/255"));
 
-  // Brightness bar
-  int barWidth = map(settings.brightness, 0, 255, 0, SCREEN_WIDTH - 10);
+  // Прогрес-бар
+  uint8_t bar = map(settings.brightness, 0, 255, 0, SCREEN_WIDTH - 10);
   display.drawRect(5, 48, SCREEN_WIDTH - 10, 5, SSD1306_WHITE);
-  display.fillRect(5, 48, barWidth, 5, SSD1306_WHITE);
+  display.fillRect(5, 48, bar, 5, SSD1306_WHITE);
 
   display.display();
 }

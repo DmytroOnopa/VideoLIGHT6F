@@ -13,7 +13,8 @@ void effectStatic(CRGB color);
 void effectRunningDot(CRGB color);
 void effectConfetti();
 void effectStaboscope();
-void effectSOS();
+void effectSoftGlow();
+void effectCyberpunk();
 void effectHazard();
 void effectPolice();
 

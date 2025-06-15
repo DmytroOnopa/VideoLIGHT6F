@@ -1,7 +1,6 @@
 #include "config.h"
 #include "display.h"
 #include "leds.h"
-#include "game.h"
 #include "settings.h"
 #include "state.h"
 #include <Arduino.h>
@@ -19,9 +18,10 @@ void updateLEDs(int effectIndex, CRGB currentColor) {
     case 1: effectRunningDot(currentColor); break;
     case 2: effectConfetti(); break;
     case 3: effectStaboscope(); break;
-    case 4: effectSOS(); break;
-    case 5: effectHazard(); break;
-    case 6: effectPolice(); break;
+    case 4: effectSoftGlow(); break;
+    case 5: effectCyberpunk(); break;
+    case 6: effectHazard(); break;
+    case 7: effectPolice(); break;
     default: effectStatic(currentColor); break;
   }
 }
@@ -33,7 +33,7 @@ void effectStatic(CRGB color) {
 void effectRunningDot(CRGB color) {
   static int pos = 0;
   static unsigned long lastUpdate = 0;
-  
+
   if (millis() - lastUpdate > 50) {
     lastUpdate = millis();
     fadeToBlackBy(leds, LED_COUNT, 50);
@@ -42,7 +42,6 @@ void effectRunningDot(CRGB color) {
   }
 }
 
-// === Confetti ===
 void effectConfetti() {
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate > 30) {
@@ -53,7 +52,6 @@ void effectConfetti() {
   }
 }
 
-// === Staboscope ===
 void effectStaboscope() {
   static unsigned long lastFlash = 0;
   static int flashCount = 0;
@@ -83,36 +81,39 @@ void effectStaboscope() {
   }
 }
 
-void effectSOS() {
-    static unsigned long t = 0;
-    static int s = 0;
-    static bool on = false;
-    
-    const int seq[] = {
-        200, 200,   // S (·)  
-        200, 200,   // S (·)  
-        200, 600,   // S (·) + пауза перед O  
-        600, 200,   // O (-)  
-        600, 200,   // O (-)  
-        600, 600,   // O (-) + пауза перед S  
-        200, 200,   // S (·)  
-        200, 200,   // S (·)  
-        200, 600    // S (·) + завершення циклу  
-    };
-    
-    if (millis() - t < seq[s]) return;  // Чекаємо, поки не минув час
-    
-    t = millis();
-    on = !on;  // Змінюємо стан (увімкнено/вимкнено)
-    
-    if (on) {
-        fill_solid(leds, LED_COUNT, CRGB(255, 80, 0));  // Увімкнути (помаранчевий)
-    } else {
-        fill_solid(leds, LED_COUNT, CRGB::Black);  // Вимкнути
-        s = (s + 1) % 16;  // Перехід до наступної фази (16 елементів)
+// === Soft Glow ===
+void effectSoftGlow() {
+  static unsigned long lastUpdate = 0;
+  static uint8_t phase = 0;
+
+  if (millis() - lastUpdate > 40) {
+    lastUpdate = millis();
+
+    uint8_t glow = sin8(phase);
+    fill_solid(leds, LED_COUNT, CHSV(32, 200, glow)); // теплий оранжево-жовтий
+    phase += 2;
+
+    FastLED.show();
+  }
+}
+
+// === Cyberpunk Neon Wave ===
+void effectCyberpunk() {
+  static uint8_t wavePos = 0;
+  static unsigned long lastUpdate = 0;
+
+  if (millis() - lastUpdate > 25) {
+    lastUpdate = millis();
+
+    for (int i = 0; i < LED_COUNT; i++) {
+      uint8_t brightness = sin8(i * 12 + wavePos);
+      uint8_t hue = 160 + sin8(i * 10 + wavePos) / 8; // 160-200: фіолетово-рожевий
+      leds[i] = CHSV(hue, 255, brightness);
     }
-    
-    FastLED.show();  // Оновити світлодіоди
+
+    wavePos += 3;
+    FastLED.show();
+  }
 }
 
 void effectHazard() {
@@ -125,7 +126,6 @@ void effectHazard() {
     CRGB color = state ? CRGB(255, 60, 0) : CRGB::Black;
 
     leds[0] = leds[9] = leds[4] = leds[5] = color;
-    // Інші вимикаємо
     for (int i = 0; i < LED_COUNT; i++) {
       if (i != 0 && i != 4 && i != 5 && i != 9) {
         leds[i] = CRGB::Black;
@@ -146,29 +146,21 @@ void effectPolice() {
 
   if (now - lastUpdate >= blinkInterval) {
     lastUpdate = now;
-
-    // Вимикаємо всі
     fill_solid(leds, LED_COUNT, CRGB::Black);
 
     if (isOn) {
-      // моргаємо
       if (leftSide) {
-        // Ліва сторона: 0, 1, 9, 8, 7
         leds[0] = leds[1] = leds[9] = leds[8] = leds[7] = CRGB(0, 0, 255); // синій
       } else {
-        // Права сторона: 2, 3, 4, 5, 6
         leds[2] = leds[3] = leds[4] = leds[5] = leds[6] = CRGB(255, 0, 0); // червоний
       }
       blinkCount++;
-    } else {
-      // Пауза між миготінням
     }
 
     FastLED.show();
     isOn = !isOn;
 
     if (!isOn && blinkCount >= 3) {
-      // 3 блимання завершено — міняємо сторону
       leftSide = !leftSide;
       blinkCount = 0;
       lastUpdate = now + pauseBetweenSides;
