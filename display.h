@@ -8,7 +8,7 @@
 
 extern Adafruit_SSD1306 display;
 extern const char* mainMenu[MENU_COUNT];
-extern const String aboutText;
+extern const char* const aboutText[] PROGMEM;
 
 void initDisplay();
 void showLoadingAnimation();

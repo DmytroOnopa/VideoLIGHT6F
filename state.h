@@ -2,6 +2,7 @@
 #define STATE_H
 
 #include <FastLED.h>  // бо тип CRGB
+#include "settings.h"
 
 enum State {
   MENU,
@@ -22,7 +23,7 @@ extern int visibleMenuItems;
 
 extern int brightness;
 extern int effectIndex;
-extern bool invertDisplay;
+extern Settings settings;  // Вже є, використовуй її
 
 extern int scrollPosY;
 extern unsigned long lastScrollTime;

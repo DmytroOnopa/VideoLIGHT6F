@@ -155,14 +155,13 @@ void spaceInvadersGameOverUpdate() {
   static int selectedOption = 0; // 0 = New Game, 1 = Exit
   unsigned long now = millis();
 
-  // Перемикання між New Game / Exit
-  if (now - lastInputTime > 200) {
+  // Обробка вводу тільки якщо минуло достатньо часу
+  if ((now - lastInputTime) > 200) {
     if (!digitalRead(NEXT_PIN)) {
       selectedOption = 1 - selectedOption; // toggle
       lastInputTime = now;
     }
 
-    // Вибір опції
     if (!digitalRead(SELECT_PIN)) {
       if (selectedOption == 0) {
         spaceInvadersInit();
@@ -172,12 +171,12 @@ void spaceInvadersGameOverUpdate() {
         drawMainMenu();
       }
       lastInputTime = now;
+      return; // Вийти, щоб уникнути зайвого оновлення дисплея
     }
   }
 
-  // Малювання Game Over з опціями
+  // Оновлення дисплея
   display.clearDisplay();
-
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(display.width() / 2 - 48, 8);
@@ -185,18 +184,10 @@ void spaceInvadersGameOverUpdate() {
 
   display.setTextSize(1);
   display.setCursor(display.width() / 2 - 30, 32);
-  if (selectedOption == 0) {
-    display.print("> New Game");
-  } else {
-    display.print("  New Game");
-  }
+  display.print(selectedOption == 0 ? "> New Game" : "  New Game");
 
   display.setCursor(display.width() / 2 - 30, 44);
-  if (selectedOption == 1) {
-    display.print("> Exit");
-  } else {
-    display.print("  Exit");
-  }
+  display.print(selectedOption == 1 ? "> Exit" : "  Exit");
 
   display.display();
 }

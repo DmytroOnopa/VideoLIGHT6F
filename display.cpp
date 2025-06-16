@@ -12,12 +12,14 @@ extern int currentMenu;
 extern const char* mainMenu[];  // масив рядків
 extern bool invertDisplay;
 
-const String aboutText = 
-  "geniusbar.site/\n"
-  "ABTOMATAK.t.me/\n"
-  "GitHub: DmytroOnopa\n"
-  "FW: VideoLIGHT6F\n"
-  "16 June 2025\n";
+// Замінено String на const char* з PROGMEM
+const char aboutLine1[] PROGMEM = "geniusbar.site/";
+const char aboutLine2[] PROGMEM = "ABTOMATAK.t.me/";
+const char aboutLine3[] PROGMEM = "GitHub: DmytroOnopa";
+const char aboutLine4[] PROGMEM = "FW: VideoLIGHT6F";
+const char aboutLine5[] PROGMEM = "16 June 2025";
+const char* const aboutText[] PROGMEM = {aboutLine1, aboutLine2, aboutLine3, aboutLine4, aboutLine5};
+const uint8_t aboutTextLines = 5;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -89,10 +91,9 @@ void drawMainMenu() {
     }
     
     display.print(mainMenu[itemIndex]);
-    
   }
 
-  // Індикатор прокрутки (якщо меню довше ніж видима область)
+  // Індикатор прокрутки
   if (MENU_COUNT > visibleMenuItems) {
     int scrollbarHeight = visibleMenuItems * 10 - 2;
     int scrollbarPos = map(currentMenu, 0, MENU_COUNT-1, 12, 12 + scrollbarHeight - 4);
@@ -100,10 +101,14 @@ void drawMainMenu() {
     display.fillRect(SCREEN_WIDTH-3, scrollbarPos, 3, 3, SSD1306_WHITE);
   }
   
-    display.setTextColor(SSD1306_WHITE); // <-- оце обов'язково
-    display.drawLine(0, 52, SCREEN_WIDTH, 52, SSD1306_WHITE);
-    display.setCursor(19, 54);
-    display.print(F("SELECT | CHANGE"));
+  display.setTextColor(SSD1306_WHITE);
+  display.drawLine(0, 52, SCREEN_WIDTH, 52, SSD1306_WHITE);
+  
+  // Футер
+  const char* footer = settings.rotateDisplay ? "CHANGE | SELECT" : "SELECT | CHANGE";
+  int footerXPos = (SCREEN_WIDTH - strlen(footer) * 6) / 2;
+  display.setCursor(footerXPos, 54);
+  display.print(footer);
 
   display.display();
 }
@@ -182,19 +187,12 @@ void drawAbout() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  const int lineHeight = 10;
-  int y = 2;
-
-  int from = 0;
-  while (y < SCREEN_HEIGHT - 10) {
-    int to = aboutText.indexOf('\n', from);
-    if (to == -1) break;
-
-    display.setCursor(0, y);
-    display.print(aboutText.substring(from, to));
-    
-    y += lineHeight;
-    from = to + 1;
+  char buffer[32]; // Збільшений буфер для безпеки
+  for (uint8_t i = 0; i < aboutTextLines && i < 5; i++) {
+    strncpy_P(buffer, (char*)pgm_read_ptr(&(aboutText[i])), sizeof(buffer)-1);
+    buffer[sizeof(buffer)-1] = '\0'; // Гарантоване завершення рядка
+    display.setCursor(0, 2 + i * 10);
+    display.print(buffer);
   }
 
   // Підказка внизу

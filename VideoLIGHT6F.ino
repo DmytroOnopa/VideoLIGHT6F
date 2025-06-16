@@ -8,7 +8,6 @@
 int visibleMenuItems = 4;
 int menuTopIndex = 0;
 int currentMenu = 0;
-bool invertDisplay = false;
 
 const char* mainMenu[MENU_COUNT] = {
   "Brightness",
