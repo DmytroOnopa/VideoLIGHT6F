@@ -9,8 +9,8 @@ struct Settings {
   int brightness;
   CRGB currentColor;
   int effectIndex;
-  bool invertDisplay;
-  bool rotateDisplay180;
+  bool invertDisplay; // Інвертування кольорів
+  bool rotateDisplay; // Обертання на 180°
 };
 
 extern Settings settings;

@@ -16,13 +16,8 @@ void loadSettings(Settings &settings) {
   settings.currentColor.g = EEPROM.read(EEPROM_GREEN);
   settings.currentColor.b = EEPROM.read(EEPROM_BLUE);
   
-  if(settings.currentColor.r == 255) settings.currentColor.r = 255;
-  if(settings.currentColor.g == 255) settings.currentColor.g = 255;
-  if(settings.currentColor.b == 255) settings.currentColor.b = 255;
-  
   settings.effectIndex = EEPROM.read(EEPROM_EFFECT);
   if (settings.effectIndex >= EFFECT_COUNT) settings.effectIndex = 0;
-  settings.invertDisplay = EEPROM.read(EEPROM_INVERT);
 }
 
 void saveSettings(const Settings &settings) {
@@ -31,5 +26,4 @@ void saveSettings(const Settings &settings) {
   EEPROM.update(EEPROM_GREEN, settings.currentColor.g);
   EEPROM.update(EEPROM_BLUE, settings.currentColor.b);
   EEPROM.update(EEPROM_EFFECT, settings.effectIndex);
-  EEPROM.update(EEPROM_INVERT, settings.invertDisplay);
 }

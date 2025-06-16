@@ -173,14 +173,14 @@ void handleAdjust() {
           EEPROM.update(EEPROM_EFFECT, settings.effectIndex);
           break;
           
-        case 5:
-          invertDisplay = !invertDisplay;
-          display.setRotation(invertDisplay ? 2 : 0);
+        case 5:  // Rotate Display
+          settings.rotateDisplay = !settings.rotateDisplay;
+          display.setRotation(settings.rotateDisplay ? 2 : 0);
           break;
-          
-        case 6:
-          invertDisplay = !invertDisplay;
-          display.invertDisplay(invertDisplay);
+  
+        case 6:  // Invert Display
+          settings.invertDisplay = !settings.invertDisplay;
+          display.invertDisplay(settings.invertDisplay);
           break;
           
         case 7:  // About - нічого не робимо

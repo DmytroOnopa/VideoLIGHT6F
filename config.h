@@ -21,7 +21,6 @@
 #define EEPROM_GREEN 2
 #define EEPROM_BLUE 3
 #define EEPROM_EFFECT 4
-#define EEPROM_INVERT 5
 
 // Інші константи
 #define EFFECT_COUNT 8

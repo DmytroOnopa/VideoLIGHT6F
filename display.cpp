@@ -22,7 +22,8 @@ void initDisplay() {
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     while(1);
   }
-  display.invertDisplay(EEPROM.read(EEPROM_INVERT));
+  display.invertDisplay(settings.invertDisplay);
+  display.setRotation(settings.rotateDisplay ? 2 : 0);
 }
 
 int countLines(const String& text) {
@@ -139,11 +140,11 @@ void drawAdjustMenu() {
       break;
     case 5: // Rotate
       display.print(F("Rotate display: "));
-      display.println(invertDisplay ? "0" : "180");
+      display.println(settings.rotateDisplay ? "180°" : "0°");
       break;
     case 6: // Invert
-      display.print(F("Enable light mode: "));
-      display.println(invertDisplay ? "Yes" : "No");
+      display.print(F("Invert colors: "));
+      display.println(settings.invertDisplay ? "Yes" : "No");
       break;
     case 7: // About
       display.print(F("About screen"));
@@ -165,9 +166,10 @@ const char* effectName(int idx) {
     case 1: return "Running Dot";
     case 2: return "Confetti";
     case 3: return "Staboscope";
-    case 4: return "SOS Signal";
-    case 5: return "Hazard Light";
-    case 6: return "Police Mode";
+    case 4: return "SoftGlow";
+    case 5: return "Cyberpunk";
+    case 6: return "Hazard Light";
+    case 7: return "Police Mode";
     default: return "Unknown";
   }
 }
