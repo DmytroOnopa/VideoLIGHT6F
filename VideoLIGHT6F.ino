@@ -129,13 +129,14 @@ if (!digitalRead(SELECT_PIN)) {
 void handleAdjust() {
   static unsigned long lastAdjustTime = 0;
   static bool wasPressed = false;
-  static int repeatDelay = 300;
+  static int repeatDelay = 400;  // Початкова затримка більша для комфорту
+  static int step = 1;          // Динамічний крок зміни
 
   bool nextPressed = digitalRead(NEXT_PIN) == LOW;
   bool selectPressed = digitalRead(SELECT_PIN) == LOW;
-
   unsigned long now = millis();
 
+  // Вихід з режиму налаштувань
   if (selectPressed) {
     state = MENU;
     drawMainMenu();
@@ -143,34 +144,41 @@ void handleAdjust() {
     return;
   }
 
+  // Обробка натискання NEXT
   if (nextPressed) {
     if (!wasPressed || (now - lastAdjustTime >= repeatDelay)) {
+      // Збільшення швидкості зміни при утриманні кнопки
+      if (wasPressed && repeatDelay > 100) {
+        repeatDelay -= 20;  // Плавне прискорення
+        step = map(repeatDelay, 400, 100, 1, 10);  // Крок зростає від 1 до 10
+      }
+
       switch (currentMenu) {
         case 0:  // Brightness
-          settings.brightness += 16;
-          if (settings.brightness > 255) settings.brightness = 16;
+          settings.brightness = (settings.brightness + step) % 256;
           FastLED.setBrightness(settings.brightness);
           EEPROM.update(EEPROM_BRIGHTNESS, settings.brightness);
           break;
           
         case 1:  // Red
-          settings.currentColor.r = (settings.currentColor.r + 5) % 256;
+          settings.currentColor.r = (settings.currentColor.r + step) % 256;
           EEPROM.update(EEPROM_RED, settings.currentColor.r);
           break;
           
         case 2:  // Green
-          settings.currentColor.g = (settings.currentColor.g + 5) % 256;
+          settings.currentColor.g = (settings.currentColor.g + step) % 256;
           EEPROM.update(EEPROM_GREEN, settings.currentColor.g);
           break;
           
         case 3:  // Blue
-          settings.currentColor.b = (settings.currentColor.b + 5) % 256;
+          settings.currentColor.b = (settings.currentColor.b + step) % 256;
           EEPROM.update(EEPROM_BLUE, settings.currentColor.b);
           break;
           
         case 4:  // Effect
           settings.effectIndex = (settings.effectIndex + 1) % EFFECT_COUNT;
           EEPROM.update(EEPROM_EFFECT, settings.effectIndex);
+          step = 1;  // Скидаємо крок для ефектів
           break;
           
         case 5:  // Rotate Display
@@ -182,20 +190,17 @@ void handleAdjust() {
           settings.invertDisplay = !settings.invertDisplay;
           display.invertDisplay(settings.invertDisplay);
           break;
-          
-        case 7:  // About - нічого не робимо
-          break;
       }
 
       drawAdjustMenu();
       lastAdjustTime = now;
       wasPressed = true;
-
-      if (repeatDelay > 50) repeatDelay -= 40;
     }
   } else {
+    // Скидання швидкості при відпусканні кнопки
     wasPressed = false;
-    repeatDelay = 200;
+    repeatDelay = 400;
+    step = 1;
   }
 }
 

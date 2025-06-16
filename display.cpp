@@ -13,8 +13,11 @@ extern const char* mainMenu[];  // масив рядків
 extern bool invertDisplay;
 
 const String aboutText = 
-  "Git: DmytroOnopa\n"
-  "FW: VideoLIGHT6F";
+  "geniusbar.site/\n"
+  "ABTOMATAK.t.me/\n"
+  "GitHub: DmytroOnopa\n"
+  "FW: VideoLIGHT6F\n"
+  "16 June 2025\n";
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 

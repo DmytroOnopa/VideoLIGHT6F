@@ -10,7 +10,7 @@
 
 void loadSettings(Settings &settings) {
   settings.brightness = EEPROM.read(EEPROM_BRIGHTNESS);
-  if (settings.brightness < 16 || settings.brightness > 255) settings.brightness = 128;
+  if (settings.brightness < 16 || settings.brightness > 255) settings.brightness = 16;
   
   settings.currentColor.r = EEPROM.read(EEPROM_RED);
   settings.currentColor.g = EEPROM.read(EEPROM_GREEN);
